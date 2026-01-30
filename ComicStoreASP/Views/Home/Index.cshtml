@@ -1,0 +1,70 @@
+﻿@model IEnumerable<ComicStoreASP.Models.Comics>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV File Upload</title>
+    <link rel="stylesheet" href="~/css/site.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Upload CSV File</h1>
+        <form asp-action="Index" asp-controller="Home" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <input type="file" name="csvFile" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+        @if (Model != null && Model.Any())
+        {
+            <h2>User List</h2>
+            @if (ViewBag.Warning != null)
+            {
+                <div class="alert alert-warning">@ViewBag.Warning</div>
+            }
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Other Names</th>
+                        <th>BLRecord ID</th>
+                        <th>Content Type</th>
+                        <th>Country of Publication</th>
+                        <th>Publisher</th>
+                        <th>DateofPublication</th>
+                        <th>Edition</th>
+                        <th>Topics</th>
+                        <th>Genre</th>
+                        <th>Languages</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td>@user.Title</td>
+                            <td>@user.Name</td>
+                            <td>@user.Role</td>
+                            <td>@user.OtherNames</td>
+                            <td>@user.BLRecordID</td>
+                            <td>@user.ContentType</td>
+                            <td>@user.CountryOfPublication</td>
+                            <td>@user.Publisher</td>
+                            <td>@user.DateOfPublication</td>
+                            <td>@user.Edition</td>
+                            <td>@user.Topics</td>
+                            <td>@user.Genre</td>
+                            <td>@user.Languages</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</body>
+</html>
+
