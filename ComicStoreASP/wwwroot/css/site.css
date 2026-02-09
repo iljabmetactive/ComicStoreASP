@@ -66,9 +66,18 @@ form {
 }
 
 .table {
-    width: 100%;
+    width: auto;
     border-collapse: collapse;
     margin-top: 20px;
+
+}
+
+tr:hover {
+    background-color: cornflowerblue;
+}
+
+div.tablecontainer {
+    overflow-x: auto;
 }
 
 .table th, .table td {
