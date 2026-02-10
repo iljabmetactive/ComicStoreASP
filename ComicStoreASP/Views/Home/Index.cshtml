@@ -20,6 +20,21 @@
             <tbody></tbody>
         </table>
     </div>
+    <div class="mb-3">
+        <label for="genreFilter" class="form-label">Filter by Genre</label>
+        <select id="genreFilter" class="form-select">
+            <option value="show all">Show All</option>
+
+            @foreach (var genre in Model
+                        .Select(c => c.Genre)
+                        .Where(g => !string.IsNullOrWhiteSpace(g))
+                        .Distinct()
+                        .OrderBy(g => g))
+            {
+                <option value="@genre">@genre</option>
+            }
+        </select>
+    </div>
 
     @if (Model != null && Model.Any())
     {
@@ -130,7 +145,19 @@
                     ]
                 });
                 loadSearchAnalytics();
+                //genre filter
+                const genreColumnIndex = $('#comicsTable th[data-column="genre"]').index();
 
+                $('#genreFilter').on('change', function () {
+                const selectedGenre = this.value;
+
+                if (selectedGenre === 'show all') {
+                    table.column(genreColumnIndex).search('').draw();
+                } else {
+                    table.column(genreColumnIndex)
+                         .search(selectedGenre, false, false)
+                         .draw();
+            }
                 // Capture search input
                 let searchTimeout;
                 table.on('search.dt', function () {
@@ -187,6 +214,15 @@
                             `);
                         });
                     });
+                //             $(document).ready(function () {
+                // const table = $('#comicsTable').DataTable({
+                //     pageLength: 25,
+                //     scrollX: true,
+                //     columnDefs: [
+                //         { orderable: false, targets: 0 }
+                //     ]
+                // });
+
             }
 
         </script>

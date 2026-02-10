@@ -1,3 +1,4 @@
+using ComicStoreASP.Models;
 using ComicStoreASP.Services;
 using ComicStoreASP.Views.Models;
 using Microsoft.AspNetCore.Http.Features;
@@ -13,6 +14,9 @@ namespace ComicStoreASP
             builder.Services.AddRazorPages();
             builder.Services.AddTransient<CSVDataReader>(); // Register CsvService
             builder.Services.AddSingleton<SearchResultAnalyticsModel>();
+            builder.Services.AddSingleton<ComicStore>();
+            builder.Services.AddSingleton<ComicGenreFilter>();
+
 
 
             builder.Services.Configure<FormOptions>(options =>

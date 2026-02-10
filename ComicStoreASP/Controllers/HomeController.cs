@@ -7,22 +7,23 @@ using System.Diagnostics;
 
 namespace ComicStoreASP.Controllers
 {
-    //[Route("[controller]")]
     public class HomeController : Controller
     {
         private readonly CSVDataReader _csvDataReader;
         private readonly ILogger<HomeController> _logger;
         private readonly SearchResultAnalyticsModel analytics;
+        private readonly ComicGenreFilter genreFilter;
+        private readonly ComicStore comicStore;
 
-        // Fix CS0246 and CS1520: Correct constructor name and parameter type
-        public HomeController(CSVDataReader csvDataReader, ILogger<HomeController> logger, SearchResultAnalyticsModel _analytics)
+        public HomeController(CSVDataReader csvDataReader, ILogger<HomeController> logger, SearchResultAnalyticsModel _analytics, 
+            ComicGenreFilter _genreFilter, ComicStore comicStore)
         {
             _csvDataReader = csvDataReader;
             _logger = logger;
             analytics = _analytics;
-
+            this.genreFilter = _genreFilter;
+            this.comicStore = comicStore;
         }
-        //[HttpGet("")]
         [HttpGet]
 
         public IActionResult Index()
@@ -42,6 +43,13 @@ namespace ComicStoreASP.Controllers
         {
             return Json(analytics.Top10Searches());
         }
+        [HttpPost]
+        public IActionResult ComicGenreFilter([FromBody] string genre)
+        {
+            var filtered = genreFilter.FilterByGenre(comicStore.Comics, genre);
+            return Json(filtered);
+        }
+
 
         [HttpPost]
         public IActionResult Index([FromForm] IFormFile csvFile)
@@ -70,7 +78,7 @@ namespace ComicStoreASP.Controllers
                 comic.Genre = uknownTableValue(comic.Genre);
                 comic.Languages = uknownTableValue(comic.Languages);
             }
-            //not all of the comic items load, work here to add all items
+
             var grouped = comics
                 .GroupBy(com => new { Title = com.Title?.Trim(), Publisher = com.Publisher?.Trim(), com.Genre })
                 .Select(g => new ComicGroupedViewModel
@@ -134,7 +142,10 @@ namespace ComicStoreASP.Controllers
 
                 })
                 .ToList();
-            return View(grouped); // SAME VIEW
+
+            comicStore.SetComics(grouped);
+
+            return View(grouped);
         }
         private string uknownTableValue(string? value)
         {
