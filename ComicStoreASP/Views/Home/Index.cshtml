@@ -53,7 +53,7 @@
                     <th>Date</th>
                     <th>Edition</th>
                     <th>Topics</th>
-                    <th>Genre</th>
+                    <th data-column="genre">Genre</th>
                     <th>Languages</th>
                 </tr>
             </thead>
@@ -136,28 +136,35 @@
 
     @section Scripts {
         <script>
+                let table;
+
+
                 $(document).ready(function () {
-                const table = $('#comicsTable').DataTable({
+					if (!$('#comicsTable').length){return; }
+
+                table = $('#comicsTable').DataTable({
                     pageLength: 25,
                     scrollX: true,
                     columnDefs: [
                         { orderable: false, targets: 0 }
                     ]
                 });
+
                 loadSearchAnalytics();
                 //genre filter
                 const genreColumnIndex = $('#comicsTable th[data-column="genre"]').index();
 
                 $('#genreFilter').on('change', function () {
-                const selectedGenre = this.value;
+                    const selectedGenre = this.value;
 
-                if (selectedGenre === 'show all') {
-                    table.column(genreColumnIndex).search('').draw();
-                } else {
-                    table.column(genreColumnIndex)
-                         .search(selectedGenre, false, false)
-                         .draw();
-            }
+                    if (selectedGenre === 'show all') {
+                        table.column(genreColumnIndex).search('').draw();
+                    } else {
+                        table.column(genreColumnIndex)
+                             .search('^' + selectedGenre + '$', true, false)
+                             .draw();
+                }
+                });
                 // Capture search input
                 let searchTimeout;
                 table.on('search.dt', function () {
@@ -171,10 +178,9 @@
                             loadSearchAnalytics();
                         }
                     }, 500);
-            });
 
-            });
-
+                });
+        });
             const cart = [];
             function addToCart(id) {
                 if (!cart.includes(id)) {
