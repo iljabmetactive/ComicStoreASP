@@ -1,6 +1,6 @@
-﻿using ComicStoreASP.Views.Models;
+﻿using ComicStoreASP.Models;
 
-namespace ComicStoreASP.Models
+namespace ComicStoreASP.Services
 {
     public class ComicGenreFilter
     {

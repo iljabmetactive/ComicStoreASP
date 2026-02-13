@@ -1,6 +1,4 @@
-﻿using ComicStoreASP.Models;
-
-namespace ComicStoreASP.Views.Models
+﻿namespace ComicStoreASP.Models
 {
     public class ComicGroupedViewModel : Comics
     {
