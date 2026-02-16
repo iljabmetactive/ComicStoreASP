@@ -1,7 +1,12 @@
+using ComicStoreASP.Data;
 using ComicStoreASP.Models;
 using ComicStoreASP.Services;
 using ComicStoreASP.Views.Models;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.SqlServer;
+
 namespace ComicStoreASP
 {
     public class Program
@@ -17,6 +22,20 @@ namespace ComicStoreASP
             builder.Services.AddSingleton<ComicStore>();
             builder.Services.AddSingleton<ComicGenreFilter>();
 
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+            {
+                options.Password.RequireDigit = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequiredLength = 6;
+            })
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders()
+            .AddDefaultUI();
 
 
             builder.Services.Configure<FormOptions>(options =>
@@ -44,6 +63,7 @@ namespace ComicStoreASP
   
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllerRoute(
@@ -57,6 +77,7 @@ namespace ComicStoreASP
                 context.Request.EnableBuffering();
                 await next();
             });
+
 
             app.Run();
         }
