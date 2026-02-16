@@ -14,6 +14,7 @@ namespace ComicStoreASP.Controllers
         private readonly SearchResultAnalyticsModel analytics;
         private readonly ComicGenreFilter genreFilter;
         private readonly ComicStore comicStore;
+        private readonly AdvancedSearchFunction _advancedSearch;
 
         public HomeController(CSVDataReader csvDataReader, ILogger<HomeController> logger, SearchResultAnalyticsModel _analytics, 
             ComicGenreFilter _genreFilter, ComicStore comicStore)
@@ -23,6 +24,7 @@ namespace ComicStoreASP.Controllers
             analytics = _analytics;
             this.genreFilter = _genreFilter;
             this.comicStore = comicStore;
+            _advancedSearch = new AdvancedSearchFunction();
         }
         [HttpGet]
 
@@ -50,8 +52,14 @@ namespace ComicStoreASP.Controllers
             return Json(filtered);
         }
 
+        [HttpPost]
+        public IActionResult AdvancedSearch(AdvancedSearchVariables searchVariables)
+        {
+            var comics = comicStore.Comics;
 
-
+            var filterComics = _advancedSearch.Search(comicStore.Comics, searchVariables);
+            return View("Index", filterComics);
+        }
 
         [HttpPost]
         public IActionResult Index([FromForm] IFormFile csvFile)
