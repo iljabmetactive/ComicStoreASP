@@ -10,6 +10,26 @@
         Search
     </button>
 </form>
+
+@* @if (User.Identity.IsAuthenticated && Model.Any())
+{
+    <form asp-action="SaveComic" method="post">
+        <table>
+            @foreach (var comic in Model)
+            {
+                <tr>
+                    <td>
+                        <input type="radio" name="comicId" value="@comic.ComicId" />
+                    </td>
+                    <td>@comic.Title</td>
+                </tr>
+            }
+        </table>
+
+        <button type="submit">Save Selected Comic</button>
+    </form>
+} *@
+
 <h4>Advanced Search</h4>
 
 <form asp-action="AdvancedSearch" asp-controller="Home" method="post" class="mb-4">
@@ -45,6 +65,35 @@
     </button>
 
 </form>
+
+@* @foreach (var comic in Model)
+{
+    <tr>
+        <td>@comic.Title</td>
+
+        @if (User.Identity.IsAuthenticated)
+        {
+            <form asp-action="SaveComic" method="post">
+                <input type="hidden" name="comicId" value="@comic.ComicId" />
+                <button type="submit">Save Comic</button>
+            </form>
+        }
+    </tr>
+} *@
+
+@* @if (User.Identity.IsAuthenticated && Model != null && Model.Any())
+{
+    var firstComic = Model.FirstOrDefault();
+    if (firstComic != null)
+    {
+        <form asp-action="SaveComic" method="post">
+            <input type="hidden"
+                   name="comicId"
+                   value="@firstComic.ComicId" />
+            <button type="submit">Save Comic</button>
+        </form>
+    }
+} *@
 
 <div>
     <div class="mb-3">
@@ -92,9 +141,9 @@
 
             <button id="toggleSortOrder">Sort</button>
         </div>
-
-
-
+    }
+    @if (Model != null && Model.Any())
+    {
         <table id="comicsTable" class="table table-striped table-bordered mt-4">
             <thead>
                 <tr>
@@ -105,7 +154,7 @@
                     <th>BLRecord ID</th>
                     <th>Content Type</th>
                     <th>Country</th>
-                    <th>Year of Publication</th>
+                    <th>Year</th>
                     <th>Publisher</th>
                     <th>Edition</th>
                     <th>Topics</th>
@@ -114,80 +163,53 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var user in Model)
+                @foreach (var comic in Model)
                 {
                     <tr>
                         <td>
-                            <button class="btn btn-sm btn-primary"
-                                    onclick="addToCart(@user.BLRecordID)">
-                                Add
-                            </button>
-                        </td>
-                        <td>@user.Title</td>
-                        <td>@string.Join(", ", user.Names)</td>
-                        <td>@string.Join(", ", user.Roles)</td>
-                        <td>@string.Join(", ", user.OtherNames)</td>
-                        <td>
-                            @if (user.BLRecordIDs != null)
+                            @if (User.Identity.IsAuthenticated)
                             {
-                                foreach (var year in user.BLRecordIDs)
-                                {
-                                    <div>@year</div>
-                                }
+                                <button class="btn btn-success btn-sm"
+                                        onclick="saveComic(@comic.ComicId)">
+                                    Save
+                                </button>
+                            } 
+
+                            @if (User.IsInRole("Staff"))
+                            {
+                                <button class="btn btn-warning btn-sm"
+                                        onclick="flagComic(@comic.ComicId)">
+                                    Flag
+                                </button>
                             }
                         </td>
-                        <td>@user.ContentType</td>
-                        <td>
-                            @if (user.PublicationYears != null)
-                            {
-                                foreach (var year in user.PublicationYears)
-                                {
-                                    <div>@year</div>
-                                }
-                            }
-                        </td>
-                        <td>@user.Publisher</td>
-                        <td>
-                            @if (user.Editions != null)
-                            {
-                                foreach (var year in user.Editions)
-                                {
-                                    <div>@year</div>
-                                }
-                            }
-                        </td>
-                        <td>
-                            @if (user.Topics != null)
-                            {
-                                foreach (var year in user.Topics)
-                                {
-                                    <div>@year</div>
-                                }
-                            }
-                        </td>
-                        <td>@user.Genre</td>
-                        <td>
-                            @if (user.Languages != null)
-                            {
-                                foreach (var year in user.Languages)
-                                {
-                                    <div>@year</div>
-                                }
-                            }
-                        </td>
+
+                        <td>@comic.Title</td>
+                        <td>@string.Join(", ", comic.Names)</td>
+                        <td>@string.Join(", ", comic.Roles)</td>
+                        <td>@string.Join(", ", comic.BLRecordIDs)</td>
+                        <td>@comic.ContentType</td>
+                        <td>@comic.CountryOfPublication</td>
+                        <td>@string.Join(", ", comic.PublicationYears)</td>
+                        <td>@comic.Publisher</td>
+                        <td>@string.Join(", ", comic.Editions)</td>
+                        <td>@string.Join(", ", comic.Topics)</td>
+                        <td>@comic.Genre</td>
+                        <td>@string.Join(", ", comic.Languages)</td>
                     </tr>
                 }
             </tbody>
         </table>
     }
 
+
     @section Scripts {
         <script>
                 let table;
-				let currentDirection = 'asc';
+                let currentDirection = 'asc';
 
                 $(document).ready(function () {
-					if (!$('#comicsTable').length){return; }
+                    if (!$('#comicsTable').length){return; }
 
                 table = $('#comicsTable').DataTable({
                     pageLength: 25,
@@ -285,7 +307,46 @@
 
             }
 
+            function saveComic(id) {
+                fetch('/Home/SaveComic', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken':
+                            $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify({ comicId: id })
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert("Comic saved");
+                    }
+                });
+            }
+
+            function flagComic(id) {
+                fetch('/Home/FlagComic', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken':
+                            $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify({
+                        comicId: id,
+                        reason: "Flagged by staff"
+                    })
+                })
+                .then(res => {
+                    if (res.ok) {
+                        alert("Comic flagged");
+                    }
+                });
+            }
+
         </script>
     }
 </div>
+
+
 

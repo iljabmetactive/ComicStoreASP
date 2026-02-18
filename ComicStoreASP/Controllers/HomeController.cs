@@ -1,9 +1,15 @@
+using ComicStoreASP.Data;
 using ComicStoreASP.Models;
 using ComicStoreASP.Services;
 using ComicStoreASP.Views.Models;
 using CsvHelper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
+using System.Security.Claims;
+using System.Text.Json;
+
 
 namespace ComicStoreASP.Controllers
 {
@@ -15,9 +21,10 @@ namespace ComicStoreASP.Controllers
         private readonly ComicGenreFilter genreFilter;
         private readonly ComicStore comicStore;
         private readonly AdvancedSearchFunction _advancedSearch;
+        private readonly ApplicationDbContext _context;
 
         public HomeController(CSVDataReader csvDataReader, ILogger<HomeController> logger, SearchResultAnalyticsModel _analytics, 
-            ComicGenreFilter _genreFilter, ComicStore comicStore)
+            ComicGenreFilter _genreFilter, ComicStore comicStore, ApplicationDbContext context)
         {
             _csvDataReader = csvDataReader;
             _logger = logger;
@@ -25,6 +32,7 @@ namespace ComicStoreASP.Controllers
             this.genreFilter = _genreFilter;
             this.comicStore = comicStore;
             _advancedSearch = new AdvancedSearchFunction();
+            _context = context;
         }
         [HttpGet]
 
@@ -33,12 +41,115 @@ namespace ComicStoreASP.Controllers
             return View(new List<ComicGroupedViewModel>());
         }
 
-        [HttpPost]
-        public IActionResult LogSearch([FromBody] string searchTerm)
+        [Authorize]
+        public IActionResult MyComics()
         {
-            analytics.LogSearches(searchTerm);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var comics = _context.SavedComics
+                .Where(sc => sc.UserId == userId)
+                .Include(sc => sc.Comic)
+                .Select(sc => sc.Comic)
+                .ToList();
+
+            return View(comics);
+        }
+
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> SaveComic([FromBody] SaveComicRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var exists = await _context.SavedComics
+                .AnyAsync(sc => sc.UserId == userId && sc.ComicId == request.ComicId);
+
+            if (!exists)
+            {
+                _context.SavedComics.Add(new SavedComic
+                {
+                    UserId = userId,
+                    ComicId = request.ComicId,
+                    SavedAt = DateTime.UtcNow
+                });
+
+                await _context.SaveChangesAsync();
+            }
+
             return Ok();
         }
+
+
+        [Authorize(Roles = "Staff")]
+        public IActionResult SearchAnalytics()
+        {
+            var analytics = _context.SavedSearches
+                .GroupBy(s => s.SearchJson)
+                .Select(g => new SearchAnalyticsViewModel
+                {
+                    SearchTerm = g.Key,
+                    Count = g.Count(),
+                    LastSearched = g.Max(x => x.CreatedAt)
+                })
+                .OrderByDescending(x => x.Count)
+                .ToList();
+
+            return View(analytics);
+        }
+
+        [Authorize(Roles = "Staff")]
+        [HttpPost]
+        public async Task<IActionResult> FlagComic([FromBody] FlagComicRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            _context.ComicFlags.Add(new FlaggedComic
+            {
+                ComicId = request.ComicId,
+                StaffUserId = userId,
+                Reason = request.Reason,
+                FlaggedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+
+        [Authorize(Roles = "Staff")]
+        public IActionResult FlaggedComics()
+        {
+            var flags = _context.ComicFlags
+            .Include(f => f.Comic)
+            .OrderByDescending(f => f.FlaggedAt)
+            .ToList();
+
+            return View(flags);
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> LogSearch([FromBody] string searchTerm)
+        {
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                _context.SavedSearches.Add(new SavedSearch
+                {
+                    SearchJson = searchTerm,
+                    CreatedAt = DateTime.UtcNow,
+                    UserId = User.Identity.IsAuthenticated
+                        ? User.FindFirstValue(ClaimTypes.NameIdentifier)
+                        : null
+                });
+
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok();
+        }
+
 
         [HttpGet]
         public IActionResult GetSearchAnalytics()
@@ -62,7 +173,7 @@ namespace ComicStoreASP.Controllers
         }
 
         [HttpPost]
-        public IActionResult Index([FromForm] IFormFile csvFile)
+        public async Task<IActionResult> Index([FromForm] IFormFile csvFile)
         {
             if (csvFile == null || csvFile.Length == 0)
             {
@@ -99,63 +210,82 @@ namespace ComicStoreASP.Controllers
                     ContentType = g.Select(x => x.ContentType).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "Unknown",
                     CountryOfPublication = g.Select(x => x.CountryOfPublication).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "Unknown",
 
-                    PublicationYears = g
-                    .Select(x => x.DateOfPublication)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Distinct()
-                    .ToList(),
+                    PublicationYears = g.Select(x => x.DateOfPublication)
+                                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                                        .Distinct()
+                                        .ToList(),
 
-                    Editions = g
-                    .Select(x => x.Edition)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Distinct()
-                    .ToList(),
+                    Editions = g.Select(x => x.Edition)
+                                .Where(x => !string.IsNullOrWhiteSpace(x))
+                                .Distinct()
+                                .ToList(),
 
-                    BLRecordIDs = g
-                    .Select(x => x.BLRecordID)
-                    .Where(x => x.HasValue)
-                    .Select(x => x.Value)
-                    .Distinct()
-                    .ToList(),
+                    BLRecordIDs = g.Select(x => x.BLRecordID)
+                                   .Where(x => x.HasValue)
+                                   .Select(x => x.Value)
+                                   .Distinct()
+                                   .ToList(),
 
-                    Names = g
-                    .Select(x => x.Name)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Distinct()
-                    .ToList(),
+                    Names = g.Select(x => x.Name)
+                             .Where(x => !string.IsNullOrWhiteSpace(x))
+                             .Distinct()
+                             .ToList(),
 
-                    Roles = g
-                    .Select(x => x.Role)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Distinct()
-                    .ToList(),
+                    Roles = g.Select(x => x.Role)
+                             .Where(x => !string.IsNullOrWhiteSpace(x))
+                             .Distinct()
+                             .ToList(),
 
-                    OtherNames = g
-                    .Select(x => x.OtherNames)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Distinct()
-                    .ToList(),
+                    OtherNames = g.Select(x => x.OtherNames)
+                                  .Where(x => !string.IsNullOrWhiteSpace(x))
+                                  .Distinct()
+                                  .ToList(),
 
-                    Topics = g
-                    .SelectMany(x => (x.Topics ?? "")
-                    .Split(';', StringSplitOptions.RemoveEmptyEntries))
-                    .Select(x => x.Trim())
-                    .Distinct()
-                    .ToList(),
+                    Topics = g.SelectMany(x => (x.Topics ?? "")
+                                .Split(';', StringSplitOptions.RemoveEmptyEntries))
+                                .Select(x => x.Trim())
+                                .Distinct()
+                                .ToList(),
 
-                    Languages = g
-                    .SelectMany(x => (x.Languages ?? "")
-                    .Split(';', StringSplitOptions.RemoveEmptyEntries))
-                    .Select(x => x.Trim())
-                    .Distinct()
-                    .ToList()
-
+                    Languages = g.SelectMany(x => (x.Languages ?? "")
+                                  .Split(';', StringSplitOptions.RemoveEmptyEntries))
+                                  .Select(x => x.Trim())
+                                  .Distinct()
+                                  .ToList()
                 })
                 .ToList();
 
+            foreach (var groupedComic in grouped)
+            {
+                var existingComic = await _context.DataComics
+                    .FirstOrDefaultAsync(c =>
+                        c.Title == groupedComic.Title &&
+                        c.Publisher == groupedComic.Publisher &&
+                        c.Genre == groupedComic.Genre);
+
+                if (existingComic != null)
+                {
+                    groupedComic.ComicId = existingComic.Id;
+                }
+                else
+                {
+                    var comicEntity = new DatabaseComic
+                    {
+                        Title = groupedComic.Title,
+                        Publisher = groupedComic.Publisher,
+                        Genre = groupedComic.Genre,
+                        DataJson = JsonSerializer.Serialize(groupedComic)
+                    };
+
+                    _context.DataComics.Add(comicEntity);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
             comicStore.SetComics(grouped);
 
-            return View(grouped);
+            return View(grouped.Take(1000).ToList());
         }
         private string uknownTableValue(string? value)
         {

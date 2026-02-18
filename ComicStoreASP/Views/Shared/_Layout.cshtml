@@ -24,6 +24,17 @@
                     <a asp-area="Identity" asp-page="/Account/Login">Login</a>
                     <a asp-area="Identity" asp-page="/Account/Register">Register</a>
                 }
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <a asp-controller="Home" asp-action="MyComics">My Comics</a>
+                }
+
+                @if (User.IsInRole("Staff"))
+                {
+                    <a asp-controller="Home" asp-action="SearchAnalytics">Analytics</a>
+                    <a asp-controller="Home" asp-action="FlaggedComics">Flagged Comics</a>
+                }
+
             </ul>
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ComicStoreASP</a>

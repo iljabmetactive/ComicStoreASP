@@ -97,6 +97,9 @@ namespace ComicStoreASP.Areas.Identity.Pages.Account
             [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
+
+            [Display(Name = "Register as Staff (Testing Only)")]
+            public bool IsStaff { get; set; }
         }
 
 
@@ -113,10 +116,24 @@ namespace ComicStoreASP.Areas.Identity.Pages.Account
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
+                await _userManager.AddToRoleAsync(user, "PublicUser");
+
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
                 var result = await _userManager.CreateAsync(user, Input.Password);
+
+                if (result.Succeeded)
+                {
+                    if (Input.IsStaff)
+                    {
+                        await _userManager.AddToRoleAsync(user, "Staff");
+                    }
+                    else
+                    {
+                        await _userManager.AddToRoleAsync(user, "PublicUser");
+                    }
+                }
 
                 if (result.Succeeded)
                 {

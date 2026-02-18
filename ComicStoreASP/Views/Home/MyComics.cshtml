@@ -1,0 +1,32 @@
+﻿@model IEnumerable<ComicStoreASP.Data.DatabaseComic>
+
+<h2>My Saved Comics</h2>
+
+@if (!Model.Any())
+{
+    <p>No saved comics yet.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Publisher</th>
+                <th>Genre</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var comic in Model)
+            {
+                <tr>
+                    <td>@comic.Title</td>
+                    <td>@comic.Publisher</td>
+                    <td>@comic.Genre</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+

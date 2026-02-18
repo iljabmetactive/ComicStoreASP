@@ -27,6 +27,11 @@
                 <label asp-for="Input.ConfirmPassword">Confirm Password</label>
                 <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
             </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" asp-for="Input.IsStaff" />
+                <label class="form-check-label">Register as Staff (Testing Only)</label>
+            </div>
+
             <button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
         </form>
     </div>

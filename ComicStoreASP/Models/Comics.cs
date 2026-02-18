@@ -1,9 +1,10 @@
-﻿using System;
+﻿using CsvHelper;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using CsvHelper;
 
 //"Name","Dates associated with name","Type of name","Role","Other names","BL record ID","Type of resource","Content type",
 //"BNB number","ISBN","Title","Variant titles","Series title","Number within series","Country of publication","Place of publication",
@@ -12,9 +13,11 @@ namespace ComicStoreASP.Models
 {
     public class Comics
     {
+
+        //[Key]
+        //public int Id { get; set; }
         public string? Title { get; set; }
         public string? Name { get; set; }
-
         public string? Role { get; set; }
         public string? OtherNames { get; set; }
         public int? BLRecordID { get; set; }

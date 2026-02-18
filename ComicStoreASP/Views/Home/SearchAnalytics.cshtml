@@ -1,0 +1,32 @@
+﻿@model IEnumerable<ComicStoreASP.Models.SearchAnalyticsViewModel>
+
+<h2>Search Analytics</h2>
+
+@if (!Model.Any())
+{
+    <p>No searches recorded yet.</p>
+}
+else
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Search Term</th>
+                <th>Count</th>
+                <th>Last Searched</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.SearchTerm</td>
+                    <td>@item.Count</td>
+                    <td>@item.LastSearched.ToLocalTime()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+

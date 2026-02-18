@@ -1,12 +1,15 @@
 ﻿namespace ComicStoreASP.Models
 {
-    public class ComicGroupedViewModel : Comics
+    public class ComicGroupedViewModel
     {
+        public int ComicId { get; set; }
         public string Title { get; set; }
         public string Publisher { get; set; }
         public string ContentType { get; set; }
         public string CountryOfPublication { get; set; }
         public string Genre { get; set; }
+
+        public int? BLRecordID { get; set; }
         public List<string> Names { get; set; } = new();
         public List<string> Roles { get; set; } = new();
         public List<string> OtherNames { get; set; } = new();
