@@ -11,6 +11,10 @@ namespace ComicStoreASP.Data
         public string Publisher { get; set; }
         public string Genre { get; set; }
         public string DataJson { get; set; }
+
+        public int DatasetVersionId { get; set; }
+        public DatatableVersion DatasetVersion { get; set; }
+
     }
 
 

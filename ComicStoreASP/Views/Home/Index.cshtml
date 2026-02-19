@@ -185,17 +185,18 @@
                         </td>
 
                         <td>@comic.Title</td>
-                        <td>@string.Join(", ", comic.Names)</td>
-                        <td>@string.Join(", ", comic.Roles)</td>
-                        <td>@string.Join(", ", comic.BLRecordIDs)</td>
-                        <td>@comic.ContentType</td>
+                        <td>@string.Join(", ", comic.Names ?? new List<string>())</td>
+                        <td>@string.Join(", ", comic.Roles ?? new List<string>())</td>
+                        <td>@string.Join(", ", comic.BLRecordIDs ?? new List<int>())</td>
+                        <td>@string.Join(", ", comic.ContentType != null ? new List<string> { comic.ContentType } : new List<string>())</td>
                         <td>@comic.CountryOfPublication</td>
-                        <td>@string.Join(", ", comic.PublicationYears)</td>
+                        <td>@string.Join(", ", comic.PublicationYears ?? new List<string>())</td>
                         <td>@comic.Publisher</td>
-                        <td>@string.Join(", ", comic.Editions)</td>
-                        <td>@string.Join(", ", comic.Topics)</td>
+                        <td>@string.Join(", ", comic.Editions ?? new List<string>())</td>
+                        <td>@string.Join(", ", comic.Topics ?? new List<string>())</td>
                         <td>@comic.Genre</td>
-                        <td>@string.Join(", ", comic.Languages)</td>
+                        <td>@string.Join(", ", comic.Languages ?? new List<string>())</td>
+
                     </tr>
                 }
             </tbody>
@@ -257,14 +258,6 @@
 
                 });
         });
-            const cart = [];
-            function addToCart(id) {
-                if (!cart.includes(id)) {
-                    cart.push(id);
-                    alert("Added to cart");
-                }
-                console.log(cart);
-            }
 
             function sendSearchAnalytics(term) {
                 fetch('/Home/LogSearch', {
@@ -307,42 +300,31 @@
 
             }
 
-            function saveComic(id) {
+            
+            function saveComic(comicId) {
                 fetch('/Home/SaveComic', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'RequestVerificationToken':
-                            $('input[name="__RequestVerificationToken"]').val()
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
                     },
-                    body: JSON.stringify({ comicId: id })
+                    body: JSON.stringify({ ComicId: comicId })
                 })
-                .then(res => {
-                    if (res.ok) {
-                        alert("Comic saved");
-                    }
-                });
+                .then(res => res.ok ? alert("Added to cart") : alert("Failed to add comic"));
             }
 
-            function flagComic(id) {
+            function flagComic(comicId) {
                 fetch('/Home/FlagComic', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'RequestVerificationToken':
-                            $('input[name="__RequestVerificationToken"]').val()
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
                     },
-                    body: JSON.stringify({
-                        comicId: id,
-                        reason: "Flagged by staff"
-                    })
+                    body: JSON.stringify({ ComicId: comicId, Reason: "Flagged by staff" })
                 })
-                .then(res => {
-                    if (res.ok) {
-                        alert("Comic flagged");
-                    }
-                });
+                .then(res => res.ok ? alert("Comic flagged") : alert("Failed to flag comic"));
             }
+
 
         </script>
     }

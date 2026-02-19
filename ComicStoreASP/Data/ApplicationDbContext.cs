@@ -18,5 +18,7 @@ namespace ComicStoreASP.Data
         public DbSet<FlaggedComic> ComicFlags { get; set; }
         public DbSet<DatabaseComic> DataComics { get; set; }
 
+        public DbSet<DatatableVersion> DatatableVersions { get; set; }
+
     }
 }

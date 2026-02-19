@@ -21,6 +21,8 @@ namespace ComicStoreASP
             builder.Services.AddSingleton<SearchResultAnalyticsModel>();
             builder.Services.AddSingleton<ComicStore>();
             builder.Services.AddSingleton<ComicGenreFilter>();
+            builder.Services.AddHostedService<DatatableUpdateService>();
+
 
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -60,7 +62,7 @@ namespace ComicStoreASP
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-  
+
             app.UseRouting();
 
             app.UseAuthentication();
@@ -80,9 +82,36 @@ namespace ComicStoreASP
 
             using (var scope = app.Services.CreateScope())
             {
-                await UserRoles.CreateRoles(scope.ServiceProvider);
+                var services = scope.ServiceProvider;
+                var context = services.GetRequiredService<ApplicationDbContext>();
+                var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+                context.Database.Migrate();
+
+                string[] roles = { "Staff", "PublicUser" };
+
+                foreach (var role in roles)
+                {
+                    if (!roleManager.RoleExistsAsync(role).Result)
+                    {
+                        roleManager.CreateAsync(new IdentityRole(role)).Wait();
+                    }
+                }
+
+                // Ensure default dataset version exists
+                if (!context.DatatableVersions.Any())
+                {
+                    context.DatatableVersions.Add(new DatatableVersion
+                    {
+                        VersionName = "Initial",
+                        ImportedAt = DateTime.UtcNow,
+                        IsActive = true
+                    });
+
+                    context.SaveChanges();
+                }
+                app.Run();
             }
-            app.Run();
         }
     }
 }

@@ -6,6 +6,7 @@ using CsvHelper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Mono.TextTemplating.CodeCompilation;
 using System.Diagnostics;
 using System.Security.Claims;
 using System.Text.Json;
@@ -35,10 +36,40 @@ namespace ComicStoreASP.Controllers
             _context = context;
         }
         [HttpGet]
-
         public IActionResult Index()
         {
-            return View(new List<ComicGroupedViewModel>());
+            var activeVersionId = _context.DatatableVersions
+                .Where(v => v.IsActive)
+                .Select(v => v.Id)
+                .FirstOrDefault();
+
+            if (activeVersionId == 0)
+                return View(new List<ComicGroupedViewModel>());
+
+            var comicsFromDb = _context.DataComics
+                .Where(c => c.DatasetVersionId == activeVersionId)
+                .AsNoTracking()
+                .ToList();
+
+            var comics = comicsFromDb
+                .Select(c =>
+                {
+                    var comic = JsonSerializer.Deserialize<ComicGroupedViewModel>(c.DataJson)!;
+
+                    comic.Names ??= new List<string>();
+                    comic.Roles ??= new List<string>();
+                    comic.OtherNames ??= new List<string>();
+                    comic.PublicationYears ??= new List<string>();
+                    comic.Editions ??= new List<string>();
+                    comic.BLRecordIDs ??= new List<int>();
+                    comic.Topics ??= new List<string>();
+                    comic.Languages ??= new List<string>();
+
+                    return comic;
+                })
+                .ToList();
+
+            return View(comics.Take(1000));
         }
 
         [Authorize]
@@ -55,7 +86,7 @@ namespace ComicStoreASP.Controllers
             return View(comics);
         }
 
-
+        public class SaveComicRequest { public int ComicId { get; set; } }
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> SaveComic([FromBody] SaveComicRequest request)
@@ -98,6 +129,7 @@ namespace ComicStoreASP.Controllers
             return View(analytics);
         }
 
+        public class FlagComicRequest { public int ComicId { get; set; } public string Reason { get; set; } }
         [Authorize(Roles = "Staff")]
         [HttpPost]
         public async Task<IActionResult> FlagComic([FromBody] FlagComicRequest request)
@@ -168,8 +200,25 @@ namespace ComicStoreASP.Controllers
         {
             var comics = comicStore.Comics;
 
-            var filterComics = _advancedSearch.Search(comicStore.Comics, searchVariables);
-            return View("Index", filterComics);
+            var filtered = comics.Where(c =>
+            string.IsNullOrWhiteSpace(searchVariables.Title) || c.Title.Contains(searchVariables.Title.Trim(), StringComparison.OrdinalIgnoreCase) &&
+            string.IsNullOrWhiteSpace(searchVariables.AuthorName) || c.Names.Any(n => n.Contains(searchVariables.AuthorName.Trim(), StringComparison.OrdinalIgnoreCase)) &&
+            string.IsNullOrWhiteSpace(searchVariables.YearOfPublication) || c.PublicationYears.Any(y => y.Contains(searchVariables.YearOfPublication.Trim(), StringComparison.OrdinalIgnoreCase)) &&
+            string.IsNullOrWhiteSpace(searchVariables.Genre) || c.Genre.Contains(searchVariables.Genre.Trim(), StringComparison.OrdinalIgnoreCase) &&
+            string.IsNullOrWhiteSpace(searchVariables.Edition) || c.Editions.Any(e => e.Contains(searchVariables.Edition.Trim(), StringComparison.OrdinalIgnoreCase)) &&
+            string.IsNullOrWhiteSpace(searchVariables.Language) || c.Languages.Any(l => l.Contains(searchVariables.Language.Trim(), StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+
+            if (!filtered.Any())
+            {
+                _logger.LogInformation("Advanced search returned 0 results for: {@SearchVariables}", searchVariables);
+                foreach (var comic in comics.Take(5))
+                {
+                    _logger.LogInformation("Comic: {@Comic}", comic);
+                }
+            }
+
+            return View("Index", filtered);
         }
 
         [HttpPost]
@@ -255,37 +304,46 @@ namespace ComicStoreASP.Controllers
                 })
                 .ToList();
 
+            var newVersion = new DatatableVersion
+            {
+                VersionName = $"Import {DateTime.UtcNow}",
+                ImportedAt = DateTime.UtcNow,
+                IsActive = false
+            };
+
+            _context.DatatableVersions.Add(newVersion);
+            await _context.SaveChangesAsync();
+
             foreach (var groupedComic in grouped)
             {
-                var existingComic = await _context.DataComics
-                    .FirstOrDefaultAsync(c =>
-                        c.Title == groupedComic.Title &&
-                        c.Publisher == groupedComic.Publisher &&
-                        c.Genre == groupedComic.Genre);
-
-                if (existingComic != null)
+                var comicEntity = new DatabaseComic
                 {
-                    groupedComic.ComicId = existingComic.Id;
-                }
-                else
-                {
-                    var comicEntity = new DatabaseComic
-                    {
-                        Title = groupedComic.Title,
-                        Publisher = groupedComic.Publisher,
-                        Genre = groupedComic.Genre,
-                        DataJson = JsonSerializer.Serialize(groupedComic)
-                    };
+                    Title = groupedComic.Title,
+                    Publisher = groupedComic.Publisher,
+                    Genre = groupedComic.Genre,
+                    DatasetVersionId = newVersion.Id,
+                    DataJson = JsonSerializer.Serialize(groupedComic)
+                };
 
-                    _context.DataComics.Add(comicEntity);
-                }
+                _context.DataComics.Add(comicEntity);
             }
+            var oldVersions = _context.DatatableVersions
+            .Where(v => v.IsActive)
+            .ToList();
+
+            foreach (var version in oldVersions)
+            {
+                version.IsActive = false;
+            }
+
+            newVersion.IsActive = true;
 
             await _context.SaveChangesAsync();
 
-            comicStore.SetComics(grouped);
+            await _context.SaveChangesAsync();
 
-            return View(grouped.Take(1000).ToList());
+            return RedirectToAction("Index");
+
         }
         private string uknownTableValue(string? value)
         {
@@ -302,6 +360,25 @@ namespace ComicStoreASP.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        private IQueryable<DatabaseComic> GetActiveComics()
+        {
+            var activeVersionId = _context.DatatableVersions
+                .Where(v => v.IsActive)
+                .Select(v => v.Id)
+                .FirstOrDefault();
+
+
+            if (activeVersionId == 0)
+            {
+                return Enumerable.Empty<DatabaseComic>().AsQueryable();
+            }
+
+            
+
+            return _context.DataComics
+                .Where(c => c.DatasetVersionId == activeVersionId);
         }
     }
 }

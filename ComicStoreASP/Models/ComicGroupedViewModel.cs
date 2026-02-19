@@ -19,5 +19,13 @@
         public List<int> BLRecordIDs { get; set; } = new();
         public List<string> Topics { get; set; } = new();
         public List<string> Languages { get; set; } = new();
+        public string DataJson { get; internal set; }
+
+        public string NamesString => Names != null ? string.Join(",", Names) : "";
+        public string RolesString => Roles != null ? string.Join(",", Roles) : "";
+        public string EditionsString => Editions != null ? string.Join(",", Editions) : "";
+        public string TopicsString => Topics != null ? string.Join(",", Topics) : "";
+        public string LanguagesString => Languages != null ? string.Join(",", Languages) : "";
+        public string YearsString => PublicationYears != null ? string.Join(",", PublicationYears) : "";
     }
 }
