@@ -1,7 +1,6 @@
 using ComicStoreASP.Data;
 using ComicStoreASP.Models;
 using ComicStoreASP.Services;
-using ComicStoreASP.Views.Models;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +17,6 @@ namespace ComicStoreASP
             // Add services to the container.
             builder.Services.AddRazorPages();
             builder.Services.AddTransient<CSVDataReader>(); // Register CsvService
-            builder.Services.AddSingleton<SearchResultAnalyticsModel>();
             builder.Services.AddSingleton<ComicStore>();
             builder.Services.AddSingleton<ComicGenreFilter>();
             builder.Services.AddHostedService<DatatableUpdateService>();

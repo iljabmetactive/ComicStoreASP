@@ -2,98 +2,28 @@
 
 <h1>Upload CSV File</h1>
 
-<form asp-action="Index" asp-controller="Home" method="post" enctype="multipart/form-data">
+@* <form asp-action="Index" asp-controller="Home" method="post" enctype="multipart/form-data">
     <input type="file" name="csvFile" class="form-control" required />
     <button type="submit" class="btn btn-primary mt-2">Upload</button>
-
-    <button type="submit" class="btn btn-success mt-3">
-        Search
-    </button>
-</form>
-
-@* @if (User.Identity.IsAuthenticated && Model.Any())
-{
-    <form asp-action="SaveComic" method="post">
-        <table>
-            @foreach (var comic in Model)
-            {
-                <tr>
-                    <td>
-                        <input type="radio" name="comicId" value="@comic.ComicId" />
-                    </td>
-                    <td>@comic.Title</td>
-                </tr>
-            }
-        </table>
-
-        <button type="submit">Save Selected Comic</button>
-    </form>
-} *@
+</form> *@
 
 <h4>Advanced Search</h4>
 
-<form asp-action="AdvancedSearch" asp-controller="Home" method="post" class="mb-4">
-
+<form id="advancedSearchForm" class="mb-4">
+    @Html.AntiForgeryToken()
     <div class="row">
-        <div class="col-md-3">
-            <input type="text" name="Title" class="form-control" placeholder="Title" />
-        </div>
-
-        <div class="col-md-3">
-            <input type="text" name="AuthorName" class="form-control" placeholder="Author" />
-        </div>
-
-        <div class="col-md-2">
-            <input type="text" name="YearOfPublication" class="form-control" placeholder="Publication Year" />
-        </div>
-
-        <div class="col-md-2">
-            <input type="text" name="Genre" class="form-control" placeholder="Genre" />
-        </div>
-
-        <div class="col-md-2">
-            <input type="text" name="Edition" class="form-control" placeholder="Edition" />
-        </div>
-
-        <div class="col-md-2 mt-2">
-            <input type="text" name="Language" class="form-control" placeholder="Language" />
-        </div>
+        <div class="col-md-3"><input type="text" name="Title" class="form-control" placeholder="Title" /></div>
+        <div class="col-md-3"><input type="text" name="AuthorName" class="form-control" placeholder="Author" /></div>
+        <div class="col-md-2"><input type="text" name="YearOfPublication" class="form-control" placeholder="Publication Year" /></div>
+        <div class="col-md-2"><input type="text" name="Genre" class="form-control" placeholder="Genre" /></div>
+        <div class="col-md-2"><input type="text" name="Edition" class="form-control" placeholder="Edition" /></div>
+        <div class="col-md-2 mt-2"><input type="text" name="Language" class="form-control" placeholder="Language" /></div>
     </div>
-
-    <button type="submit" class="btn btn-success mt-3">
-        Search
-    </button>
-
+    <button type="submit" class="btn btn-success mt-3">Search</button>
 </form>
 
-@* @foreach (var comic in Model)
-{
-    <tr>
-        <td>@comic.Title</td>
+<div id="searchResults"></div>
 
-        @if (User.Identity.IsAuthenticated)
-        {
-            <form asp-action="SaveComic" method="post">
-                <input type="hidden" name="comicId" value="@comic.ComicId" />
-                <button type="submit">Save Comic</button>
-            </form>
-        }
-    </tr>
-} *@
-
-@* @if (User.Identity.IsAuthenticated && Model != null && Model.Any())
-{
-    var firstComic = Model.FirstOrDefault();
-    if (firstComic != null)
-    {
-        <form asp-action="SaveComic" method="post">
-            <input type="hidden"
-                   name="comicId"
-                   value="@firstComic.ComicId" />
-            <button type="submit">Save Comic</button>
-        </form>
-    }
-} *@
 
 <div>
     <div class="mb-3">
@@ -203,9 +133,11 @@
         </table>
     }
 
+    
+</div>
 
-    @section Scripts {
-        <script>
+@section Scripts {
+    <script>
                 let table;
                 let currentDirection = 'asc';
 
@@ -269,38 +201,36 @@
                 });
             }
 
+            // function loadSearchAnalytics() {
+            //         function sendSearchAnalytics(term) {
+            //         fetch('/Home/LogSearch', {
+            //             method: 'POST',
+            //             headers: {
+            //                 'Content-Type': 'application/json'
+            //             },
+            //             body: JSON.stringify(term)
+            //         });
+            //     }
+
             function loadSearchAnalytics() {
-                fetch('/Home/GetSearchAnalytics')
-                    .then(res => res.json())
-                    .then(data => {
-                        const tbody = $('#analyticsTable tbody');
-                        tbody.empty();
+                fetch('/Home/GetCurrentSearchAnalytics')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = $('#analyticsTable tbody');
+                    tbody.empty();
 
-                        data.forEach(item => {
-                            const parts = item.split(' — ');
-                            const term = parts[0];
-                            const count = parts[1];
-
-                            tbody.append(`
-                                <tr>
-                                    <td>${term}</td>
-                                    <td>${count}</td>
-                                </tr>
-                            `);
-                        });
+                    data.forEach(item => {
+                        tbody.append(`
+                            <tr>
+                                <td>${item.term}</td>
+                                <td>${item.count}</td>
+                            </tr>
+                        `);
                     });
-                //             $(document).ready(function () {
-                // const table = $('#comicsTable').DataTable({
-                //     pageLength: 25,
-                //     scrollX: true,
-                //     columnDefs: [
-                //         { orderable: false, targets: 0 }
-                //     ]
-                // });
-
+                });
             }
 
-            
+
             function saveComic(comicId) {
                 fetch('/Home/SaveComic', {
                     method: 'POST',
@@ -325,10 +255,73 @@
                 .then(res => res.ok ? alert("Comic flagged") : alert("Failed to flag comic"));
             }
 
+                console.log("Script loaded");
 
-        </script>
-    }
-</div>
+            document.addEventListener("DOMContentLoaded", function() {
+                const searchForm = document.getElementById("advancedSearchForm");
+                if (!searchForm) {
+                    console.log("Form not found");
+                    return;
+                }
+
+                console.log("Form found");
+
+                searchForm.addEventListener("submit", async function(e) {
+                    e.preventDefault();
+                    console.log("Submit clicked");
+
+                    const formData = new FormData(this);
+                    const data = Object.fromEntries(formData.entries());
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                    try {
+                            const response = await fetch('/Home/AdvancedSearch', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': token
+                            },
+                            body: JSON.stringify(data)
+                        });
+
+                        const results = await response.json();
+                        const container = document.getElementById("searchResults");
+
+                        if (results.length === 0) {
+                            table.clear().draw();
+                            return;
+                        }
+                        //needs to be fixed to show all the tables as needed and buttons.
+                        table.clear();
+
+                        results.forEach(c => {
+                            table.row.add([
+                                '',
+                                c.title || c.Title,
+                                (c.names || c.Names || []).join(', '),
+                                (c.roles || c.Roles || []).join(', '),
+                                '',
+                                '',
+                                '',
+                                (c.publicationYears || c.PublicationYears || []).join(', '),
+                                c.publisher || c.Publisher,
+                                (c.editions || c.Editions || []).join(', '),
+                                (c.topics || c.Topics || []).join(', '),
+                                c.genre || c.Genre,
+                                (c.languages || c.Languages || []).join(', ')
+                            ]);
+                        });
+
+                        table.draw();
+
+                    } catch (err) {
+                        console.error("Search failed:", err);
+                    }
+                });
+            });
+    </script>
+
+}
 
 
 

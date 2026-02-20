@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using ComicStoreASP.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,6 @@ namespace ComicStoreASP.Data
         public DbSet<DatabaseComic> DataComics { get; set; }
 
         public DbSet<DatatableVersion> DatatableVersions { get; set; }
-
+        public DbSet<searchAnalyticsLog> SearchAnalyticsLogs { get; set; }
     }
 }
