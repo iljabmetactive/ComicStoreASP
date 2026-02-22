@@ -293,22 +293,34 @@
                         }
                         //needs to be fixed to show all the tables as needed and buttons.
                         table.clear();
-
                         results.forEach(c => {
-                            table.row.add([
-                                '',
-                                c.title || c.Title,
-                                (c.names || c.Names || []).join(', '),
-                                (c.roles || c.Roles || []).join(', '),
-                                '',
-                                '',
-                                '',
-                                (c.publicationYears || c.PublicationYears || []).join(', '),
-                                c.publisher || c.Publisher,
-                                (c.editions || c.Editions || []).join(', '),
-                                (c.topics || c.Topics || []).join(', '),
-                                c.genre || c.Genre,
-                                (c.languages || c.Languages || []).join(', ')
+                        const comicId = c.comicId || c.ComicId;
+
+                        const actions = comicId ? `
+                            <button class="btn btn-success btn-sm"
+                                onclick="saveComic(${comicId})">
+                                Save
+                            </button>
+                            <button class="btn btn-warning btn-sm"
+                                onclick="flagComic(${comicId})">
+                                Flag
+                            </button>
+                        ` : '';
+
+                        table.row.add([
+                            actions,
+                            c.title || c.Title || '',
+                            (c.names || c.Names || []).join(', '),
+                            (c.roles || c.Roles || []).join(', '),
+                            (c.blRecordIDs || c.BLRecordIDs || []).join(', '),
+                            c.contentType || c.ContentType || '',
+                            c.countryOfPublication || c.CountryOfPublication || '',
+                            (c.publicationYears || c.PublicationYears || []).join(', '),
+                            c.publisher || c.Publisher || '',
+                            (c.editions || c.Editions || []).join(', '),
+                            (c.topics || c.Topics || []).join(', '),
+                            c.genre || c.Genre || '',
+                            (c.languages || c.Languages || []).join(', ')
                             ]);
                         });
 

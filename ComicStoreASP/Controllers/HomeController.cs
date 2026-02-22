@@ -66,7 +66,7 @@ namespace ComicStoreASP.Controllers
                     .ToList();
             }
 
-            return View(comics.Take(1000));
+            return View(comics.Take(7000));
         }
 
         [Authorize]
@@ -82,7 +82,7 @@ namespace ComicStoreASP.Controllers
 
             return View(comics);
         }
-
+        //used to save comic ID and display it in the My Comics page for the user.
         public class SaveComicRequest { public int ComicId { get; set; } }
         [Authorize]
         [HttpPost]
@@ -176,6 +176,7 @@ namespace ComicStoreASP.Controllers
             return Json(data);
         }
 
+        //used to store the comic ID for the flagged comic and display it in the Flagged Comics page for staff members to see.
         public class FlaggedComicRequest { public int ComicId { get; set; } public string Reason { get; set; } }
         [Authorize(Roles = "Staff")]
         [HttpPost]
@@ -252,6 +253,7 @@ namespace ComicStoreASP.Controllers
         [Route("Home/AdvancedSearch")]
         public async Task<IActionResult> AdvancedSearchAsync([FromBody]AdvancedSearchVariables searchVariables)
         {
+            //Checks for the active version of the dataset
             var activeVersionId = _context.DatatableVersions
                 .Where(v => v.IsActive)
                 .Select(v => v.Id)
@@ -264,7 +266,12 @@ namespace ComicStoreASP.Controllers
                 .Where(c => c.DatasetVersionId == activeVersionId)
                 .AsNoTracking()
                 .ToList()
-                .Select(c => JsonSerializer.Deserialize<ComicGroupedViewModel>(c.DataJson)!)
+                .Select(c =>
+                {
+                    var vm = JsonSerializer.Deserialize<ComicGroupedViewModel>(c.DataJson)!;
+                    vm.ComicId = c.Id;
+                    return vm;
+                })
                 .ToList();
 
             var filtered = comics.Where(c =>
@@ -451,23 +458,6 @@ namespace ComicStoreASP.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-        private IQueryable<DatabaseComic> GetActiveComics()
-        {
-            var activeVersionId = _context.DatatableVersions
-                .Where(v => v.IsActive)
-                .Select(v => v.Id)
-                .FirstOrDefault();
-
-
-            if (activeVersionId == 0)
-            {
-                return Enumerable.Empty<DatabaseComic>().AsQueryable();
-            }
-
-            
-
-            return _context.DataComics
-                .Where(c => c.DatasetVersionId == activeVersionId);
-        }
+      
     }
 }
