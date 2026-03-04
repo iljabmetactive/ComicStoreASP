@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36511.14 d17.14
+VisualStudioVersion = 17.14.36511.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComicStoreASP", "ComicStoreASP\ComicStoreASP.csproj", "{BE2A7F97-61D9-4F74-A6CD-F6D7C9A1E80A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComicUnitTests", "ComicUnitTests\ComicUnitTests.csproj", "{F287535E-915C-4B2B-9DCC-723ED0B757D7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,9 +19,16 @@ Global
 		{BE2A7F97-61D9-4F74-A6CD-F6D7C9A1E80A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE2A7F97-61D9-4F74-A6CD-F6D7C9A1E80A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE2A7F97-61D9-4F74-A6CD-F6D7C9A1E80A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F287535E-915C-4B2B-9DCC-723ED0B757D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F287535E-915C-4B2B-9DCC-723ED0B757D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F287535E-915C-4B2B-9DCC-723ED0B757D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F287535E-915C-4B2B-9DCC-723ED0B757D7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F287535E-915C-4B2B-9DCC-723ED0B757D7} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7D859B55-6B82-4BD5-8166-CB4F05ADCB65}

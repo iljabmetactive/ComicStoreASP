@@ -66,7 +66,7 @@ namespace ComicStoreASP.Controllers
                     .ToList();
             }
 
-            return View(comics.Take(7000));
+            return View(comics.Take(1000));
         }
 
         [Authorize]
@@ -188,7 +188,18 @@ namespace ComicStoreASP.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (string.IsNullOrEmpty(userId))
-                return BadRequest("UserId missing");
+                return Unauthorized();
+
+            if (request == null || request.ComicId <= 0)
+                return BadRequest("Invalid comic ID.");
+
+            if (string.IsNullOrWhiteSpace(request.Reason))
+                return BadRequest("Reason is required.");
+            var existingFlag = await _context.ComicFlags
+                .FirstOrDefaultAsync(f => f.ComicId == request.ComicId);
+
+            if (existingFlag != null)
+                return Ok(); // Prevent duplicates
 
             _context.ComicFlags.Add(new FlaggedComic
             {
