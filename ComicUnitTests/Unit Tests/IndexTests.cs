@@ -1,6 +1,11 @@
-﻿using ComicStoreASP.Data;
+﻿using ComicStoreASP.Controllers;
+using ComicStoreASP.Data;
 using ComicStoreASP.Models;
+using ComicStoreASP.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,44 +18,49 @@ namespace ComicUnitTests.Unit_Tests
     public class IndexTests
     {
         [Fact]
-        public void Index_ShouldReturn_OnlyActiveVersion()
+        public async Task Index_ShouldReturn_OnlyActiveVersion()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
 
-            var active = new DatatableVersion { IsActive = true, VersionName ="V2" };
-            var old = new DatatableVersion { IsActive = false, VersionName = "V1" };
+            var csvReader = new Mock<CSVDataReader>();
+            var logger = new Mock<ILogger<HomeController>>();
+            var genreFilter = new Mock<ComicGenreFilter>();
+            var comicStore = new Mock<ComicStore>();
 
-            context.DatatableVersions.AddRange(active, old);
-            context.SaveChanges();
-
-            context.DataComics.Add(new DatabaseComic
+            var csvData = new List<Comics>
             {
-                DatasetVersionId = active.Id,
-                Title = "ActiveComic",
-                DataJson = JsonSerializer.Serialize(new ComicGroupedViewModel()),
-                Genre = "Superhero",
-                Publisher = "Marvel"
-            });
+                new Comics
+                {
+                    Title = "Test Comic",
+                    Publisher = "Marvel",
+                    Genre = "Superhero",
+                    ContentType = "Comic"
 
-            context.DataComics.Add(new DatabaseComic
-            {
-                DatasetVersionId = old.Id,
-                Title = "OldComic",
-                DataJson = JsonSerializer.Serialize(new ComicGroupedViewModel()),
-                Genre = "Superhero",
-                Publisher = "DC"
-            });
+                }
+            };
 
-            context.SaveChanges();
+            csvReader.Setup(r => r.ReadCsvFile(It.IsAny<Stream>(),7000))
+                     .Returns(csvData);
 
-            var controller = ControllerFactory.CreateController(context);
+            var controller = new HomeController(
+                csvReader.Object,
+                logger.Object,
+                genreFilter.Object,
+                comicStore.Object,
+                context
+            );
 
-            var result = controller.Index();
+            var bytes = Encoding.UTF8.GetBytes("Fake CSV content");
+            var stream = new MemoryStream(bytes);
 
-            var view = Assert.IsType<ViewResult>(result);
-            var list = Assert.IsAssignableFrom<IEnumerable<ComicGroupedViewModel>>(view.Model);
+            var file = new FormFile(stream, 0, bytes.Length, "Data", "test.csv");
 
-            Assert.Single(list);
+            var results = await controller.Index(file);
+
+            var view = Assert.IsType<ViewResult>(results);
+
+            Assert.Single(context.DatatableVersions);
+            Assert.Single(context.DataComics);
         }
     }
 }

@@ -46,11 +46,17 @@ namespace ComicUnitTests.UITests
         {
             driver.Navigate().GoToUrl("https://localhost:7210/");
 
+            Wait().Until(ExpectedConditions.ElementExists(By.Id("comicsTable")));
             var select = new SelectElement(driver.FindElement(By.Id("sortColumn")));
-
             select.SelectByValue("1");
 
-            driver.FindElement(By.Id("toggleSortOrder")).Click();
+            var sortButton = driver.FindElement(By.Id("toggleSortOrder"));
+
+            // Scroll button into view
+            ((IJavaScriptExecutor)driver)
+                .ExecuteScript("arguments[0].scrollIntoView(true);", sortButton);
+
+            sortButton.Click();
 
             Assert.True(driver.FindElements(By.CssSelector("#comicsTable tbody tr")).Count > 0);
         }

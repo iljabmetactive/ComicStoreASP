@@ -89,10 +89,13 @@ namespace ComicUnitTests.Functional_tests
             var result = controller.GetCurrentSearchAnalytics();
             var json = Assert.IsType<JsonResult>(result);
 
-            var data = Assert.IsAssignableFrom<IEnumerable<dynamic>>(json.Value);
+            var data = Assert.IsAssignableFrom<IEnumerable<object>>(json.Value);
             var first = data.First();
 
-            Assert.Equal("A", first.Term);
+            var tempPorperty = first.GetType().GetProperty("Term");
+            var tempValue = tempPorperty?.GetValue(first)?.ToString();
+
+            Assert.Equal("A", tempValue);
         }
     }
 }

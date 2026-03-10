@@ -24,10 +24,9 @@ namespace ComicUnitTests.Unit_Tests
         {
             var context = TestDbHelper.GetInMemoryDbContext();
 
-            var controller = ControllerFactory.CreateController(
+            var controller = ControllerFactory.CreateStaffController(
                 context,
-                userId: "staff1",
-                role: "Staff"
+                userId: "staff1"
             );
 
             var result = await controller.FlagComic(
@@ -46,10 +45,9 @@ namespace ComicUnitTests.Unit_Tests
         {
             var context = TestDbHelper.GetInMemoryDbContext();
 
-            var controller = ControllerFactory.CreateController(
+            var controller = ControllerFactory.CreateLoggedInController(
                 context,
-                "user1",
-                "User");
+                "user1");
 
             var result = await controller.FlagComic(
                 new HomeController.FlaggedComicRequest
@@ -65,10 +63,9 @@ namespace ComicUnitTests.Unit_Tests
         public async Task FlagComic_ShouldReturnError_WhenUserIsMissing()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
-            var controller = ControllerFactory.CreateController(
+            var controller = ControllerFactory.CreateStaffController(
                 context,
-                userId: "",
-                role: "Staff");
+                userId: "");
             var result = await controller.FlagComic(
                 new HomeController.FlaggedComicRequest
                 {
@@ -82,10 +79,9 @@ namespace ComicUnitTests.Unit_Tests
         public async Task FlagComic_ShouldReturnError_WhenReasonIsMissing()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
-            var controller = ControllerFactory.CreateController(
+            var controller = ControllerFactory.CreateStaffController(
                 context,
-                userId: "staff1",
-                role: "Staff");
+                userId: "staff1");
             var result = await controller.FlagComic(
                 new HomeController.FlaggedComicRequest
                 {
@@ -99,10 +95,9 @@ namespace ComicUnitTests.Unit_Tests
         public async Task FlagComic_ShouldReturnError_WhenComicIdIsInvalid()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
-            var controller = ControllerFactory.CreateController(
+            var controller = ControllerFactory.CreateStaffController(
                 context,
-                userId: "staff1",
-                role: "Staff");
+                userId: "staff1");
             var result = await controller.FlagComic(
                 new HomeController.FlaggedComicRequest
                 {
@@ -116,10 +111,9 @@ namespace ComicUnitTests.Unit_Tests
         public async Task FlagComic_ShouldNotDuplicateFlags()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
-            var controller = ControllerFactory.CreateController(
+            var controller = ControllerFactory.CreateStaffController(
                 context,
-                userId: "staff1",
-                role: "Staff");
+                userId: "staff1");
             var request = new HomeController.FlaggedComicRequest
             {
                 ComicId = 1,
@@ -134,14 +128,12 @@ namespace ComicUnitTests.Unit_Tests
         public async Task FlagComic_ShouldHandle_ConcurrentFlags()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
-            var controller1 = ControllerFactory.CreateController(
+            var controller1 = ControllerFactory.CreateStaffController(
                 context,
-                userId: "staff1",
-                role: "Staff");
-            var controller2 = ControllerFactory.CreateController(
+                userId: "staff1");
+            var controller2 = ControllerFactory.CreateStaffController(
                 context,
-                userId: "staff2",
-                role: "Staff");
+                userId: "staff2");
             var request = new HomeController.FlaggedComicRequest
             {
                 ComicId = 1,
@@ -155,17 +147,15 @@ namespace ComicUnitTests.Unit_Tests
         }
 
         [Fact]
-        public async Task FlagComic_ShouldAllowMultipleFlags_FromDifferentUsers()
+        public async Task FlagComic_ShouldAllowComicFlags_OnSameList_FromDifferentUsers()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
-            var controller1 = ControllerFactory.CreateController(
+            var controller1 = ControllerFactory.CreateStaffController(
                 context,
-                userId: "staff1",
-                role: "Staff");
-            var controller2 = ControllerFactory.CreateController(
+                userId: "staff1");
+            var controller2 = ControllerFactory.CreateStaffController(
                 context,
-                userId: "staff2",
-                role: "Staff");
+                userId: "staff2");
             await controller1.FlagComic(new HomeController.FlaggedComicRequest
             {
                 ComicId = 1,
@@ -173,7 +163,7 @@ namespace ComicUnitTests.Unit_Tests
             });
             await controller2.FlagComic(new HomeController.FlaggedComicRequest
             {
-                ComicId = 1,
+                ComicId = 2,
                 Reason = "Second flag"
             });
             Assert.Equal(2, context.ComicFlags.Count());
@@ -183,10 +173,9 @@ namespace ComicUnitTests.Unit_Tests
         public async Task FlagComic_ShouldTrimReason()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
-            var controller = ControllerFactory.CreateController(
+            var controller = ControllerFactory.CreateStaffController(
                 context,
-                userId: "staff1",
-                role: "Staff");
+                userId: "staff1");
             await controller.FlagComic(new HomeController.FlaggedComicRequest
             {
                 ComicId = 1,

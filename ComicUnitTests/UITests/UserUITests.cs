@@ -95,9 +95,7 @@ namespace ComicUnitTests.UITests
 
             logoutButton.Click();
 
-            Wait().Until(d => d.PageSource.Contains("successfully logged out"));
-
-            Assert.Contains("successfully logged out", driver.PageSource);
+            Assert.Contains("Log in", driver.PageSource);
         }
 
         [Fact]

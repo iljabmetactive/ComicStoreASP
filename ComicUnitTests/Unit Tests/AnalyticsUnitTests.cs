@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static ComicUnitTests.ControllerFactory;
 
 namespace ComicUnitTests.Unit_Tests
 {
@@ -61,7 +62,7 @@ namespace ComicUnitTests.Unit_Tests
 
             context.SaveChanges();
 
-            var controller = ControllerFactory.CreateController(context, "staff1", "Staff");
+            var controller = ControllerFactory.CreateStaffController(context, "staff1");
 
             var result = controller.SearchAnalytics();
             var view = (ViewResult)result;
@@ -138,7 +139,7 @@ namespace ComicUnitTests.Unit_Tests
 
             context.SaveChanges();
 
-            var controller = ControllerFactory.CreateController(context, "staff1", "Staff");
+            var controller = ControllerFactory.CreateStaffController(context, "staff1");
 
             var result = controller.SearchAnalytics();
 
@@ -174,7 +175,7 @@ namespace ComicUnitTests.Unit_Tests
 
             context.SaveChanges();
 
-            var controller = ControllerFactory.CreateController(context, "staff1", "Staff");
+            var controller = ControllerFactory.CreateStaffController(context, "staff1");
 
             var result = controller.SearchAnalytics();
             var view = (ViewResult)result;
@@ -182,7 +183,10 @@ namespace ComicUnitTests.Unit_Tests
 
             var first = model.TopSearches.Cast<dynamic>().First();
 
-            Assert.Equal("A", first.SearchTerm);
+            var tempPorperty = first.GetType().GetProperty("SearchTerm");
+            var tempValue = tempPorperty?.GetValue(first)?.ToString();
+
+            Assert.Equal("A", tempValue);
         }
 
         [Fact]
@@ -190,7 +194,7 @@ namespace ComicUnitTests.Unit_Tests
         {
             var context = TestDbHelper.GetInMemoryDbContext();
 
-            var controller = ControllerFactory.CreateController(context,"user1","User");
+            var controller = CreateNonLoggedInController(context);
 
             var result = controller.SearchAnalytics();
 
@@ -202,7 +206,7 @@ namespace ComicUnitTests.Unit_Tests
         {
             var context = TestDbHelper.GetInMemoryDbContext();
 
-            var controller = ControllerFactory.CreateController(context,"staff1","Staff");
+            var controller = CreateStaffController(context, "staff1");
 
             var result = controller.SearchAnalytics();
 

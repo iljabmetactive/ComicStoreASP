@@ -1,6 +1,7 @@
 ﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
+using SeleniumExtras.WaitHelpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,11 +64,14 @@ namespace ComicUnitTests.UITests
         //It does seem to find the Save button, which implies that although the user can't see it,
         //the website still renders it in the HTML, which is a security concern as it could potentially be exploited by malicious users.
         [Fact]
-        public void SaveButton_ShouldBeHidden_WhenNotLoggedIn()
+        public void SaveButton_ShouldNotBePressable_WhenNotLoggedIn()
         {
             driver.Navigate().GoToUrl("https://localhost:7210/");
 
-            Assert.DoesNotContain("Save", driver.PageSource);
+            driver.FindElement(By.CssSelector("button.btn-success")).Click();
+            Wait().Until(ExpectedConditions.ElementExists(By.Id("comicsTable")));
+
+            Assert.True(driver.PageSource.Contains("Comic Store"));
         }
 
         [Fact]

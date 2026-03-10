@@ -7,7 +7,7 @@ namespace ComicStoreASP.Services
 {
     public class CSVDataReader
     {
-        public IEnumerable<Comics> ReadCsvFile(Stream fileStream, int maxRowCount = 7000)
+        public virtual IEnumerable<Comics> ReadCsvFile(Stream fileStream, int maxRowCount = 7000)
         {
             try
             {

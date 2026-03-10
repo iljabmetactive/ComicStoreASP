@@ -30,7 +30,7 @@ namespace ComicUnitTests.Unit_Tests
 
             context.SaveChanges();
 
-            var controller = ControllerFactory.CreateController(context, "user1");
+            var controller = ControllerFactory.CreateLoggedInController(context, "user1");
 
             var result = controller.MyComics();
 
@@ -44,7 +44,7 @@ namespace ComicUnitTests.Unit_Tests
         public void MyComics_ShouldReturnEmptyList_WhenNoComicsSaved()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
-            var controller = ControllerFactory.CreateController(context, "user1");
+            var controller = ControllerFactory.CreateLoggedInController(context, "user1");
             var result = controller.MyComics();
             var view = Assert.IsType<ViewResult>(result);
             var comics = Assert.IsAssignableFrom<List<DatabaseComic>>(view.Model);
@@ -55,7 +55,7 @@ namespace ComicUnitTests.Unit_Tests
         public void MyComics_ShouldReturnEmptyList_WhenUserNotLoggedIn()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
-            var controller = ControllerFactory.CreateController(context);
+            var controller = ControllerFactory.CreateNonLoggedInController(context);
             var result = controller.MyComics();
             var view = Assert.IsType<ViewResult>(result);
             var comics = Assert.IsAssignableFrom<List<DatabaseComic>>(view.Model);
@@ -72,7 +72,7 @@ namespace ComicUnitTests.Unit_Tests
                 Comic = new DatabaseComic { Title = "", DataJson ="{}", Genre = "", Publisher ="" }
             });
             context.SaveChanges();
-            var controller = ControllerFactory.CreateController(context, "user1");
+            var controller = ControllerFactory.CreateLoggedInController(context, "user1");
             var result = controller.MyComics();
             var view = Assert.IsType<ViewResult>(result);
             var comics = Assert.IsAssignableFrom<List<DatabaseComic>>(view.Model);

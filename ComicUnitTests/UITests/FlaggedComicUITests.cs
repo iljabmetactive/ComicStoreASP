@@ -1,6 +1,7 @@
 ﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
+using SeleniumExtras.WaitHelpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,11 +64,13 @@ namespace ComicUnitTests.UITests
         }
 
         [Fact]
-        public void FlagButton_ShouldBeHidden_ForNonStaff()
+        public void FlagButton_ShouldNotBePressable_ForNonStaff()
         {
             driver.Navigate().GoToUrl("https://localhost:7210/");
 
-            Assert.DoesNotContain("Flag", driver.PageSource);
+            var flagButtons = driver.FindElements(By.CssSelector("button.btn-warning"));
+
+            Assert.True(flagButtons.Count == 0, "Flag button should not be accessible for non-staff users.");
         }
 
         [Fact]

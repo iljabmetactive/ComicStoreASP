@@ -47,11 +47,11 @@ namespace ComicUnitTests.Unit_Tests
 
             await context.SaveChangesAsync();
 
-            var controller = ControllerFactory.CreateController(context, "user1");
+            var controller = ControllerFactory.CreateStaffController(context, "user1");
 
             var search = new AdvancedSearchVariables
             {
-                Title = "batman"
+                Title = "Thor"
             };
 
             var result = await controller.AdvancedSearchAsync(search);
@@ -93,7 +93,7 @@ namespace ComicUnitTests.Unit_Tests
 
             await context.SaveChangesAsync();
 
-            var controller = ControllerFactory.CreateController(context, "user1");
+            var controller = ControllerFactory.CreateStaffController(context, "user1");
 
             var search = new AdvancedSearchVariables
             {
@@ -119,7 +119,7 @@ namespace ComicUnitTests.Unit_Tests
             context.DatatableVersions.Add(version);
             await context.SaveChangesAsync();
 
-            var controller = ControllerFactory.CreateController(context, "user1");
+            var controller = ControllerFactory.CreateStaffController(context, "user1");
 
             await controller.AdvancedSearchAsync(new AdvancedSearchVariables
             {
@@ -136,7 +136,7 @@ namespace ComicUnitTests.Unit_Tests
             var version = new DatatableVersion { VersionName = "v1", ImportedAt = DateTime.UtcNow, IsActive = true };
             context.DatatableVersions.Add(version);
             await context.SaveChangesAsync();
-            var controller = ControllerFactory.CreateController(context, "user1");
+            var controller = ControllerFactory.CreateStaffController(context, "user1");
             var search = new AdvancedSearchVariables
             {
                 Title = "NonExistentComic"
@@ -151,12 +151,13 @@ namespace ComicUnitTests.Unit_Tests
         public async Task AdvancedSearch_ShouldReturnError_WhenUserIsMissing()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
-            var controller = ControllerFactory.CreateController(context);
+            var controller = ControllerFactory.CreateNonLoggedInController(context);
             var search = new AdvancedSearchVariables
             {
                 Title = "Test"
             };
             var result = await controller.AdvancedSearchAsync(search);
+
             Assert.IsType<UnauthorizedResult>(result);
         }
     }

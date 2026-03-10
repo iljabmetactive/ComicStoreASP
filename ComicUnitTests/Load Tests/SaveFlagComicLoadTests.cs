@@ -13,7 +13,7 @@ namespace ComicUnitTests.Load_Tests
         public async Task SaveComic_ShouldHandle_SavesAtTheSameTime()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
-            var controller = ControllerFactory.CreateController(context, "user1");
+            var controller = ControllerFactory.CreateStaffController(context, "user1");
 
             var request = new HomeController.SaveComicRequest { ComicId = 1 };
 
@@ -29,14 +29,12 @@ namespace ComicUnitTests.Load_Tests
         public async Task FlagComic_ShouldHandle_ConcurrentFlags()
         {
             var context = TestDbHelper.GetInMemoryDbContext();
-            var controller1 = ControllerFactory.CreateController(
+            var controller1 = ControllerFactory.CreateStaffController(
                 context,
-                userId: "staff1",
-                role: "Staff");
-            var controller2 = ControllerFactory.CreateController(
+                userId: "staff1");
+            var controller2 = ControllerFactory.CreateStaffController(
                 context,
-                userId: "staff2",
-                role: "Staff");
+                userId: "staff2");
             var request = new HomeController.FlaggedComicRequest
             {
                 ComicId = 1,

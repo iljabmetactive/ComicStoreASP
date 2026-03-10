@@ -132,13 +132,29 @@ namespace ComicUnitTests.Unit_Tests
         [Fact]
         public async Task ExecuteAsync_ShouldLoop_UntilCancelled()
         {
+            var context = TestDbHelper.GetInMemoryDbContext();
+
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider.Setup(s => s.GetService(typeof(ApplicationDbContext)))
+                           .Returns(context);
+            var scopeMock = new Mock<IServiceScope>();
+            scopeMock.Setup(s => s.ServiceProvider)
+                     .Returns(serviceProvider.Object);
+
             var factoryMock = new Mock<IServiceScopeFactory>();
+            factoryMock.Setup(f => f.CreateScope())
+                       .Returns(scopeMock.Object);
+
             var logger = new Mock<ILogger<DatatableUpdateService>>();
 
             var service = new DatatableUpdateService(factoryMock.Object, logger.Object);
 
             var cts = new CancellationTokenSource();
+
+            
             cts.CancelAfter(100);
+
+            await Task.Delay(200);
 
             await service.StartAsync(cts.Token);
 

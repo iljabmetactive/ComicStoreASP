@@ -95,6 +95,13 @@ namespace ComicStoreASP.Controllers
 
             if (string.IsNullOrEmpty(userId))
                 return BadRequest("UserId missing");
+            if (request == null || request.ComicId <= 0)
+                return BadRequest("Invalid comic ID.");
+
+            //this piece of code breaks the functionality of saved comics. So for now we will just remove it.
+            //this was added after automated testing of the applciation.
+            //if (request.ComicId >= 10000)
+            //   return BadRequest("Invalid user ID.");
 
             var exists = await _context.SavedComics
                 .AnyAsync(sc => sc.UserId == userId && sc.ComicId == request.ComicId);
@@ -118,6 +125,9 @@ namespace ComicStoreASP.Controllers
         [Authorize(Roles = "Staff")]
         public IActionResult SearchAnalytics()
         {
+            if (!User.IsInRole("Staff"))
+                return Forbid();
+
             var topSearches = _context.SavedSearches
                 .GroupBy(s => s.SearchJson)
                 .Select(g => new
@@ -182,7 +192,7 @@ namespace ComicStoreASP.Controllers
         [HttpPost]
         public async Task<IActionResult> FlagComic([FromBody] FlaggedComicRequest request)
         {
-            if (!User.Identity.IsAuthenticated)
+            if (!User.IsInRole("Staff"))
                 return Unauthorized();
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -205,7 +215,7 @@ namespace ComicStoreASP.Controllers
             {
                 ComicId = request.ComicId,
                 StaffUserId = userId,
-                Reason = request.Reason,
+                Reason = request.Reason.Trim(),
                 FlaggedAt = DateTime.UtcNow
             });
 
@@ -264,6 +274,8 @@ namespace ComicStoreASP.Controllers
         [Route("Home/AdvancedSearch")]
         public async Task<IActionResult> AdvancedSearchAsync([FromBody]AdvancedSearchVariables searchVariables)
         {
+            //if (!User.Identity.IsAuthenticated)
+            //    return Unauthorized();
             //Checks for the active version of the dataset
             var activeVersionId = _context.DatatableVersions
                 .Where(v => v.IsActive)

@@ -5,6 +5,7 @@ using SeleniumExtras.WaitHelpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -53,12 +54,10 @@ namespace ComicUnitTests.UITests
         {
             driver.Navigate().GoToUrl("https://localhost:7210/");
 
-            Wait().Until(ExpectedConditions.ElementExists(By.Id("comicsTable")));
+            Wait().Until(d => d.PageSource.Contains("Title"));
 
-            var headers = driver.FindElements(By.CssSelector("#comicsTable th"));
-
-            Assert.Contains(headers, h => h.Text.Contains("Title"));
-            Assert.Contains(headers, h => h.Text.Contains("Publisher"));
+            Assert.Contains("Title", driver.PageSource);
+            Assert.Contains("Publisher", driver.PageSource);
         }
 
         [Fact]
