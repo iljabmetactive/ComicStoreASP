@@ -18,10 +18,10 @@
     <form id="advancedSearchForm" class="mb-4">
         @Html.AntiForgeryToken()
         <div class="row">
-            <div class="col-md-3"><input type="text" name="Title" class="form-control" placeholder="Title" /></div>
-            <div class="col-md-3"><input type="text" name="AuthorName" class="form-control" placeholder="Author" /></div>
+            <input type="text" id="titleSearch" name="Title" class="form-control" placeholder="Title" />
+            <input type="text" id="authorSearch" name="AuthorName" class="form-control" placeholder="Author" />
             <div class="col-md-2"><input type="text" name="YearOfPublication" class="form-control" placeholder="Publication Year" /></div>
-            <div class="col-md-2"><input type="text" name="Genre" class="form-control" placeholder="Genre" /></div>
+            <input type="text" id="genreSearch" name="Genre" class="form-control" placeholder="Genre" />
             <div class="col-md-2"><input type="text" name="Edition" class="form-control" placeholder="Edition" /></div>
             <div class="col-md-2 mt-2"><input type="text" name="Language" class="form-control" placeholder="Language" /></div>
         </div>
@@ -259,6 +259,10 @@
                 console.log("Script loaded");
 
             document.addEventListener("DOMContentLoaded", function() {
+                    setUpAutoComplete("titleSearch", "title");
+                    setUpAutoComplete("authorSearch", "author");
+                    setUpAutoComplete("genreSearch", "genre");
+
                 const searchForm = document.getElementById("advancedSearchForm");
                 if (!searchForm) {
                     console.log("Form not found");
@@ -341,6 +345,50 @@
                     }
                 });
             });
+
+            function setUpAutoComplete(inputId, field) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            const suggestionBox = document.createElement('div');
+            suggestionBox.classList.add('autocomplete-suggestions');
+            input.parentNode.appendChild(suggestionBox);
+
+            let timeout;
+
+            input.addEventListener('input', function () {
+                clearTimeout(timeout);
+
+                const query = this.value.trim();
+
+                if (query.length < 2) {
+                    suggestionBox.innerHTML = '';
+                    return;
+                }
+
+                timeout = setTimeout(() => {
+                    fetch(`/api/API/suggestions?field=${field}&search=${encodeURIComponent(query)}`)
+                        .then(res => res.json())
+                        .then(data => {
+
+                            suggestionBox.innerHTML = "";
+
+                            data.forEach(item => {
+                                const suggestionItem = document.createElement('div');
+                                suggestionItem.classList.add('autocomplete-suggestion');
+                                suggestionItem.textContent = item;
+
+                                suggestionItem.addEventListener('click', () => {
+                                    input.value = item;
+                                    suggestionBox.innerHTML = '';
+                                });
+
+                                suggestionBox.appendChild(suggestionItem);
+                            });
+                        });
+                }, 300);
+            });
+        }
     </script>
 
 }
