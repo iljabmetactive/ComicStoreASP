@@ -1,17 +1,19 @@
 ﻿using ComicStoreASP.Data;
 using ComicStoreASP.Models;
 using ComicStoreASP.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenQA.Selenium.Internal;
 using System;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace ComicStoreASP.Controllers
 {
+    [Route("api")]
     [ApiController]
-    [Route("api/[controller]")]
     public class APIController : Controller
     {
         private readonly CSVDataReader _csvDataReader;
@@ -20,7 +22,7 @@ namespace ComicStoreASP.Controllers
         private readonly ComicStore comicStore;
         private readonly AdvancedSearchFunction _advancedSearch;
         private readonly ApplicationDbContext _context;
-        public APIController(CSVDataReader csvDataReader, ILogger<HomeController> logger, ComicGenreFilter _genreFilter, 
+        public APIController(CSVDataReader csvDataReader, ILogger<HomeController> logger, ComicGenreFilter _genreFilter,
             ComicStore comicStore, ApplicationDbContext context)
         {
             _csvDataReader = csvDataReader;
@@ -81,18 +83,38 @@ namespace ComicStoreASP.Controllers
 
             return Ok(results);
         }
-        //var suggestions = comics
-        //    .Where(searchLog => searchLog.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) 
-        //        || searchLog.Names.Any(name => name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-        //        || searchLog.Genre.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-        //    .SelectMany(searchLog => new List<string>
-        //    {
-        //        searchLog.Title,
-        //        searchLog.Genre
-        //    }.Concat(searchLog.Names))
-        //    .Where(suggestions => !string.IsNullOrWhiteSpace(suggestions))
-        //    .Distinct()
-        //    .Take(10)
-        //    .ToList();
+
+        [HttpPost("reviews/{comicId}")]
+        public async Task<IActionResult> AddReview(int comicId, [FromBody] ComicReviews review)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            review.ComicId = comicId;
+            review.UserId = userId ?? "anonymous user";
+            review.CreatedAt = DateTime.UtcNow;
+
+            _context.ComicReviews.Add(review);
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpGet("reviews/{comicId}")]
+        public async Task<IActionResult> GetReviews(int comicId)
+        {
+            try {
+                var reviews = await _context.ComicReviews
+                    .Where(r => r.ComicId == comicId)
+                    .OrderByDescending(r => r.CreatedAt)
+                    .ToListAsync();
+
+                return Ok(reviews);
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+                
+        }
     }
 }

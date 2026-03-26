@@ -21,5 +21,6 @@ namespace ComicStoreASP.Data
 
         public DbSet<DatatableVersion> DatatableVersions { get; set; }
         public DbSet<searchAnalyticsLog> SearchAnalyticsLogs { get; set; }
+        public DbSet<ComicReviews> ComicReviews { get; set; }
     }
 }

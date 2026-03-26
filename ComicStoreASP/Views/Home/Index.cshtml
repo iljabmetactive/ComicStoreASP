@@ -114,7 +114,21 @@
                                     Flag
                                 </button>
                             }
-                        </td>
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <button class="btn btn-primary btn-sm"
+                                    onclick="openReviewBox(@comic.ComicId)">
+                                    Review
+                                </button>
+                            }
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <button class="btn btn-info btn-sm"
+                                    onclick="loadReviews(@comic.ComicId)">
+                                    View Review
+							    </button>
+                            }
+                    </td>
 
                         <td>@comic.Title</td>
                         <td>@string.Join(", ", comic.Names ?? new List<string>())</td>
@@ -132,89 +146,93 @@
                     </tr>
                 }
             </tbody>
-        </table>   
+        </table>
+        <div id="reviewSection" style="margin-top:20px; display:none;">
+            <h4>Add Review</h4>
+
+            <input type="hidden" id="reviewComicId" />
+
+            <label>Rating (1–5)</label>
+            <input type="number" id="reviewRating" min="1" max="5" class="form-control" />
+
+            <label>Comment</label>
+            <textarea id="reviewComment" class="form-control"></textarea>
+
+            <button onclick="submitReview()" class="btn btn-success mt-2">
+                Submit Review
+            </button>
+        </div>
+
+        <div id="reviewsList" class="mt-4"></div>
 </div>
 
 @section Scripts {
     <script>
-                let table;
-                let currentDirection = 'asc';
-                const isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLower();
-                const isStaff = @User.IsInRole("Staff").ToString().ToLower();
+        let table;
+        let currentDirection = 'asc';
+        const isAuthenticated = @User.Identity.IsAuthenticated.ToString().ToLower();
+        const isStaff = @User.IsInRole("Staff").ToString().ToLower();
 
-                $(document).ready(function () {
-                    if (!$('#comicsTable').length){return; }
+        $(document).ready(function () {
+            if (!$('#comicsTable').length) return;
 
-                table = $('#comicsTable').DataTable({
-                    pageLength: 25,
-                    scrollX: true,
-                    columnDefs: [
-                        { orderable: false, targets: 0 }
-                    ]
-                });
-                //sorting button
-                $('#toggleSortOrder').on('click', function () {
-                    const selectedColumn = $('#sortColumn').val();
+            table = $('#comicsTable').DataTable({
+                pageLength: 25,
+                scrollX: true,
+                columnDefs: [
+                    { orderable: false, targets: 0 }
+                ]
+            });
 
-                    currentDirection = currentDirection === 'asc' ? 'desc' : 'asc';
-                    table.order([selectedColumn, currentDirection]).draw();
-                    $(this).text(currentDirection === 'asc' ? 'Ascending' : 'Descending');
-                });
-                loadSearchAnalytics();
-                //genre filter
-                const genreColumnIndex = $('#comicsTable th[data-column="genre"]').index();
+            $('#toggleSortOrder').on('click', function () {
+                const selectedColumn = $('#sortColumn').val();
+                currentDirection = currentDirection === 'asc' ? 'desc' : 'asc';
 
-                $('#genreFilter').on('change', function () {
-                    const selectedGenre = this.value;
+                table.order([selectedColumn, currentDirection]).draw();
+                $(this).text(currentDirection === 'asc' ? 'Ascending' : 'Descending');
+            });
 
-                    if (selectedGenre === 'show all') {
-                        table.column(genreColumnIndex).search('').draw();
-                    } else {
-                        table.column(genreColumnIndex)
-                             .search('^' + selectedGenre + '$', true, false)
-                             .draw();
+            loadSearchAnalytics();
+
+            const genreColumnIndex = $('#comicsTable th[data-column="genre"]').index();
+
+            $('#genreFilter').on('change', function () {
+                const selectedGenre = this.value;
+
+                if (selectedGenre === 'show all') {
+                    table.column(genreColumnIndex).search('').draw();
+                } else {
+                    table.column(genreColumnIndex)
+                        .search('^' + selectedGenre + '$', true, false)
+                        .draw();
                 }
-                });
-                // Capture search input
-                let searchTimeout;
-                table.on('search.dt', function () {
-                    clearTimeout(searchTimeout);
+            });
 
-                    searchTimeout = setTimeout(() => {
-                        const searchTerm = table.search().trim();
+            let searchTimeout;
+            table.on('search.dt', function () {
+                clearTimeout(searchTimeout);
 
-                        if (searchTerm.length > 1) {
-                            sendSearchAnalytics(searchTerm);
-                            loadSearchAnalytics();
-                        }
-                    }, 500);
+                searchTimeout = setTimeout(() => {
+                    const searchTerm = table.search().trim();
 
-                });
+                    if (searchTerm.length > 1) {
+                        sendSearchAnalytics(searchTerm);
+                        loadSearchAnalytics();
+                    }
+                }, 500);
+            });
         });
 
-            function sendSearchAnalytics(term) {
-                fetch('/Home/LogSearch', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(term)
-                });
-            }
+        function sendSearchAnalytics(term) {
+            fetch('/Home/LogSearch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(term)
+            });
+        }
 
-            // function loadSearchAnalytics() {
-            //         function sendSearchAnalytics(term) {
-            //         fetch('/Home/LogSearch', {
-            //             method: 'POST',
-            //             headers: {
-            //                 'Content-Type': 'application/json'
-            //             },
-            //             body: JSON.stringify(term)
-            //         });
-            //     }
-
-            function loadSearchAnalytics() {
-                fetch('/Home/GetCurrentSearchAnalytics')
+        function loadSearchAnalytics() {
+            fetch('/Home/GetCurrentSearchAnalytics')
                 .then(res => res.json())
                 .then(data => {
                     const tbody = $('#analyticsTable tbody');
@@ -229,95 +247,77 @@
                         `);
                     });
                 });
-            }
+        }
 
+        function saveComic(comicId) {
+            fetch('/Home/SaveComic', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                body: JSON.stringify({ ComicId: comicId })
+            })
+            .then(res => res.ok ? alert("Added to cart") : alert("Failed to add comic"));
+        }
 
-            function saveComic(comicId) {
-                fetch('/Home/SaveComic', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    body: JSON.stringify({ ComicId: comicId })
-                })
-                .then(res => res.ok ? alert("Added to cart") : alert("Failed to add comic"));
-            }
+        function flagComic(comicId) {
+            fetch('/Home/FlagComic', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                body: JSON.stringify({ ComicId: comicId, Reason: "Flagged by staff" })
+            })
+            .then(res => res.ok ? alert("Comic flagged") : alert("Failed to flag comic"));
+        }
 
-            function flagComic(comicId) {
-                fetch('/Home/FlagComic', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    body: JSON.stringify({ ComicId: comicId, Reason: "Flagged by staff" })
-                })
-                .then(res => res.ok ? alert("Comic flagged") : alert("Failed to flag comic"));
-            }
+        document.addEventListener("DOMContentLoaded", function () {
 
-                console.log("Script loaded");
+            setUpAutoComplete("titleSearch", "title");
+            setUpAutoComplete("authorSearch", "author");
+            setUpAutoComplete("genreSearch", "genre");
 
-            document.addEventListener("DOMContentLoaded", function() {
-                    setUpAutoComplete("titleSearch", "title");
-                    setUpAutoComplete("authorSearch", "author");
-                    setUpAutoComplete("genreSearch", "genre");
+            const searchForm = document.getElementById("advancedSearchForm");
+            if (!searchForm) return;
 
-                const searchForm = document.getElementById("advancedSearchForm");
-                if (!searchForm) {
-                    console.log("Form not found");
-                    return;
-                }
+            searchForm.addEventListener("submit", async function (e) {
+                e.preventDefault();
 
-                console.log("Form found");
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData.entries());
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-                searchForm.addEventListener("submit", async function(e) {
-                    e.preventDefault();
-                    console.log("Submit clicked");
+                try {
+                    const response = await fetch('/Home/AdvancedSearch', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify(data)
+                    });
 
-                    const formData = new FormData(this);
-                    const data = Object.fromEntries(formData.entries());
-                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    const results = await response.json();
 
-                    try {
-                            const response = await fetch('/Home/AdvancedSearch', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'RequestVerificationToken': token
-                            },
-                            body: JSON.stringify(data)
-                        });
+                    if (results.length === 0) {
+                        table.clear().draw();
+                        return;
+                    }
 
-                        const results = await response.json();
-                        const container = document.getElementById("searchResults");
+                    table.clear();
 
-                        if (results.length === 0) {
-                            table.clear().draw();
-                            return;
-                        }
-                        //needs to be fixed to show all the tables as needed and buttons.
-                        table.clear();
-                        results.forEach(c => {
+                    results.forEach(c => {
                         const comicId = c.comicId || c.ComicId;
 
                         let actions = '';
                         if (comicId) {
                             if (isAuthenticated) {
-                                actions += `
-                                    <button class="btn btn-success btn-sm"
-                                        onclick="saveComic(${comicId})">
-                                        Save
-                                    </button>
-                                `;
+                                actions += `<button class="btn btn-success btn-sm" onclick="saveComic(${comicId})">Save</button>`;
                             }
                             if (isStaff) {
-                                actions += `
-                                    <button class="btn btn-warning btn-sm"
-                                        onclick="flagComic(${comicId})">
-                                        Flag
-                                    </button>
-                                `;
+                                actions += `<button class="btn btn-warning btn-sm" onclick="flagComic(${comicId})">Flag</button>`;
                             }
                         }
 
@@ -335,18 +335,19 @@
                             (c.topics || c.Topics || []).join(', '),
                             c.genre || c.Genre || '',
                             (c.languages || c.Languages || []).join(', ')
-                            ]);
-                        });
+                        ]);
+                    });
 
-                        table.draw();
+                    table.draw();
 
-                    } catch (err) {
-                        console.error("Search failed:", err);
-                    }
-                });
+                } catch (err) {
+                    console.error("Search failed:", err);
+                }
             });
+        });
 
-            function setUpAutoComplete(inputId, field) {
+
+        function setUpAutoComplete(inputId, field) {
             const input = document.getElementById(inputId);
             if (!input) return;
 
@@ -367,27 +368,80 @@
                 }
 
                 timeout = setTimeout(() => {
-                    fetch(`/api/API/suggestions?field=${field}&search=${encodeURIComponent(query)}`)
+                    fetch(`/api/suggestions?field=${field}&Search=${encodeURIComponent(query)}`)
                         .then(res => res.json())
                         .then(data => {
-
                             suggestionBox.innerHTML = "";
 
                             data.forEach(item => {
-                                const suggestionItem = document.createElement('div');
-                                suggestionItem.classList.add('autocomplete-suggestion');
-                                suggestionItem.textContent = item;
+                                const div = document.createElement('div');
+                                div.classList.add('autocomplete-suggestion');
+                                div.textContent = item;
 
-                                suggestionItem.addEventListener('click', () => {
+                                div.addEventListener('click', () => {
                                     input.value = item;
                                     suggestionBox.innerHTML = '';
                                 });
 
-                                suggestionBox.appendChild(suggestionItem);
+                                suggestionBox.appendChild(div);
                             });
                         });
                 }, 300);
             });
+        }
+
+
+        function openReviewBox(comicId) {
+            document.getElementById("reviewComicId").value = comicId;
+            document.getElementById("reviewSection").style.display = "block";
+        }
+
+        function submitReview() {
+            const comicId = document.getElementById("reviewComicId").value;
+            const rating = document.getElementById("reviewRating").value;
+            const comment = document.getElementById("reviewComment").value;
+
+            fetch(`/api/reviews/${comicId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    rating: parseInt(rating),
+                    comment: comment
+                })
+            })
+            .then(res => {
+                if (res.ok) {
+                    alert("Review added!");
+                    loadReviews(comicId);
+                } else {
+                    alert("Review failed");
+                }
+            });
+        }
+
+        function loadReviews(comicId) {
+            fetch(`/api/reviews/${comicId}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("Server error");
+                    return res.json();
+                })
+                .then(data => {
+                    const reviewsList = document.getElementById("reviewsList");
+                    reviewsList.innerHTML = "<h4>Reviews</h4>";
+
+                    data.forEach(review => {
+                        reviewsList.innerHTML += `
+                            <div class="card mb-2">
+                                <div class="card-body">
+                                    <strong>Rating:</strong> ${review.rating}/5 <br/>
+                                    <p>${review.comment}</p>
+                                    <small>${new Date(review.createdAt).toLocaleString()}</small>
+                                </div>
+                            </div>
+                        `;
+                    });
+                })
+                .catch(err => console.error("Review load failed:", err));
         }
     </script>
 
