@@ -5,7 +5,7 @@ on:
     branches: [ "master" ]
 
 env:
-  PROJECT_LOCATION: ComicStoreASP/ComicStoreASP/ComicStoreASP.csproj
+  PROJECT_LOCATION: ComicStoreASP/ComicStoreASP.csproj
   ELASTIC_BEANSTALK_NAME: comicstore-app-Git
   ELASTIC_BEANSTALK_ENV_NAME: comicstore-git-env
   AWS_REGION: eu-west-2
