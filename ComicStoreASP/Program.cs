@@ -84,7 +84,17 @@ namespace ComicStoreASP
                 var context = services.GetRequiredService<ApplicationDbContext>();
                 var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-                context.Database.Migrate();
+                try
+                {
+                    context.Database.Migrate();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Migration failed: " + ex.Message);
+                }
+
+                
+                
 
                 string[] roles = { "Staff", "PublicUser" };
 
@@ -108,8 +118,9 @@ namespace ComicStoreASP
 
                     context.SaveChanges();
                 }
-                app.Run();
+                
             }
+            app.Run();
         }
     }
 }

@@ -4,12 +4,12 @@
     <h1>Comic Store</h1>
 </head>
 
-@* <h1>Upload CSV File</h1> *@
+<h1>Upload CSV File</h1>
 
-@* <form asp-action="Index" asp-controller="Home" method="post" enctype="multipart/form-data">
+<form asp-action="Index" asp-controller="Home" method="post" enctype="multipart/form-data">
     <input type="file" name="csvFile" class="form-control" required />
     <button type="submit" class="btn btn-primary mt-2">Upload</button>
-</form> *@
+</form>
 
 
 @if (User.Identity.IsAuthenticated)
@@ -50,7 +50,7 @@
         <select id="genreFilter" class="form-select">
             <option value="show all">Show All</option>
 
-            @foreach (var genre in Model
+            @foreach (var genre in (Model ?? Enumerable.Empty<ComicStoreASP.Models.ComicGroupedViewModel>())
                         .Select(c => c.Genre)
                         .Where(g => !string.IsNullOrWhiteSpace(g))
                         .Distinct()
@@ -95,7 +95,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var comic in Model)
+            @foreach (var comic in Model ?? Enumerable.Empty<ComicStoreASP.Models.ComicGroupedViewModel>())
                 {
                     <tr>
                         <td>
